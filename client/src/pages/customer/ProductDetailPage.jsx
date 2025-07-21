@@ -18,15 +18,18 @@ export default function ProductDetailPage() {
     display: 'none',
   });
   const zoomRef = useRef(null);
+  
+  // Get the API base URL from environment variables
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
   useEffect(() => {
     const fetchProduct = async () => {
       try {
-        const res = await axios.get(`http://localhost:5000/api/products/${id}`);
+        const res = await axios.get(`${API_BASE_URL}/products/${id}`);
         const data = res.data;
         
         // Populate shop details properly
-        const productWithShop = await axios.get(`http://localhost:5000/api/products/${id}?populate=shop`);
+        const productWithShop = await axios.get(`${API_BASE_URL}/products/${id}?populate=shop`);
         
         setProduct(productWithShop.data);
         setSelectedVariant(productWithShop.data.variants?.[0] || null);
@@ -41,12 +44,12 @@ export default function ProductDetailPage() {
     };
 
     if (id) fetchProduct();
-  }, [id]);
+  }, [id, API_BASE_URL]);
 
   const fetchCart = async () => {
     try {
       const token = localStorage.getItem('token');
-      const res = await axios.get('http://localhost:5000/api/cart', {
+      const res = await axios.get(`${API_BASE_URL}/cart`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.data.items) {
@@ -66,7 +69,7 @@ export default function ProductDetailPage() {
         return;
       }
 
-      const res = await fetch('http://localhost:5000/api/cart/add', {
+      const res = await fetch(`${API_BASE_URL}/cart/add`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -109,7 +112,7 @@ export default function ProductDetailPage() {
       }
 
       // Get user profile to check address
-      const userRes = await axios.get('http://localhost:5000/api/user/profile', {
+      const userRes = await axios.get(`${API_BASE_URL}/user/profile`, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -133,7 +136,7 @@ export default function ProductDetailPage() {
         totalAmount: selectedVariant?.price || 0
       };
 
-      const res = await axios.post('http://localhost:5000/api/orders', orderData, {
+      const res = await axios.post(`${API_BASE_URL}/orders`, orderData, {
         headers: { 
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}` 

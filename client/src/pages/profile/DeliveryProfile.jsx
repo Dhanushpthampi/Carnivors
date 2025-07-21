@@ -1,9 +1,14 @@
+import { useEffect, useState } from 'react';
+import axios from 'axios';
+
 export default function DeliveryProfile() {
   const [user, setUser] = useState(null);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
-    axios.get('/api/user/profile', {
+    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+
+    axios.get(`${API_BASE_URL}/api/user/profile`, {
       headers: { Authorization: `Bearer ${token}` },
     })
     .then(res => setUser(res.data))

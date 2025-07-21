@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
 export default function CustomerProfile() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -19,18 +21,17 @@ export default function CustomerProfile() {
   const fetchUserProfile = async () => {
     try {
       const token = localStorage.getItem('token');
-      
+
       if (!token) {
         toast.error('Please login to view profile');
         setLoading(false);
         return;
       }
 
-      const res = await axios.get('http://localhost:5000/api/user/profile', {
+      const res = await axios.get(`${API_BASE_URL}/user/profile`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      console.log('Profile data:', res.data);
       setUser(res.data);
       setFormData({
         name: res.data.name || '',
@@ -56,10 +57,9 @@ export default function CustomerProfile() {
   const handleUpdateProfile = async () => {
     try {
       const token = localStorage.getItem('token');
-      
-      // Update profile (name and email)
-      const profileRes = await axios.put(
-        'http://localhost:5000/api/user/update-profile',
+
+      await axios.put(
+        `${API_BASE_URL}/user/update-profile`,
         {
           name: formData.name,
           email: formData.email
@@ -69,10 +69,9 @@ export default function CustomerProfile() {
         }
       );
 
-      // Update address separately
       if (formData.address !== user.address) {
         await axios.put(
-          'http://localhost:5000/api/user/update-address',
+          `${API_BASE_URL}/user/update-address`,
           { address: formData.address },
           {
             headers: { Authorization: `Bearer ${token}` }
@@ -80,11 +79,9 @@ export default function CustomerProfile() {
         );
       }
 
-      // Refresh profile data
       await fetchUserProfile();
       setEditing(false);
       toast.success('Profile updated successfully!');
-      
     } catch (err) {
       console.error('Error updating profile:', err);
       toast.error(err.response?.data?.error || 'Error updating profile');
@@ -149,7 +146,6 @@ export default function CustomerProfile() {
       </div>
 
       <div className="space-y-6">
-        {/* Profile Picture Placeholder */}
         <div className="flex justify-center">
           <div className="w-24 h-24 bg-red-100 rounded-full flex items-center justify-center">
             <span className="text-3xl font-bold text-red-600">
@@ -158,24 +154,19 @@ export default function CustomerProfile() {
           </div>
         </div>
 
-        {/* Personal Information */}
         <div className="bg-gray-50 p-6 rounded-lg">
           <h3 className="text-xl font-semibold mb-4 text-gray-800">Personal Information</h3>
-          
+
           <div className="grid md:grid-cols-2 gap-4">
-            {/* Name Field */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Full Name
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
               {editing ? (
                 <input
                   type="text"
                   name="name"
                   value={formData.name}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                  placeholder="Enter your full name"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
                 />
               ) : (
                 <p className="px-3 py-2 bg-white border border-gray-200 rounded-lg">
@@ -184,19 +175,15 @@ export default function CustomerProfile() {
               )}
             </div>
 
-            {/* Email Field */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Email Address
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
               {editing ? (
                 <input
                   type="email"
                   name="email"
                   value={formData.email}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                  placeholder="Enter your email"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
                 />
               ) : (
                 <p className="px-3 py-2 bg-white border border-gray-200 rounded-lg">
@@ -205,40 +192,30 @@ export default function CustomerProfile() {
               )}
             </div>
 
-            {/* User Role */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Account Type
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Account Type</label>
               <p className="px-3 py-2 bg-white border border-gray-200 rounded-lg capitalize">
                 {user.role || 'Customer'}
               </p>
             </div>
 
-            {/* Member Since */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Member Since
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Member Since</label>
               <p className="px-3 py-2 bg-white border border-gray-200 rounded-lg">
                 {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}
               </p>
             </div>
           </div>
 
-          {/* Address Field - Full Width */}
           <div className="mt-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Delivery Address
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Delivery Address</label>
             {editing ? (
               <textarea
                 name="address"
                 value={formData.address}
                 onChange={handleInputChange}
                 rows="3"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                placeholder="Enter your delivery address"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
               />
             ) : (
               <p className="px-3 py-2 bg-white border border-gray-200 rounded-lg min-h-[80px]">
@@ -248,7 +225,6 @@ export default function CustomerProfile() {
           </div>
         </div>
 
-        {/* Account Statistics */}
         <div className="bg-gradient-to-r from-red-50 to-red-100 p-6 rounded-lg">
           <h3 className="text-xl font-semibold mb-4 text-red-800">Account Overview</h3>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
@@ -267,20 +243,19 @@ export default function CustomerProfile() {
           </div>
         </div>
 
-        {/* Quick Actions */}
         <div className="bg-gray-50 p-6 rounded-lg">
           <h3 className="text-xl font-semibold mb-4 text-gray-800">Quick Actions</h3>
           <div className="flex flex-wrap gap-3">
-            <button className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors">
+            <button className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg">
               📋 View Orders
             </button>
-            <button className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors">
+            <button className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg">
               🛒 View Cart
             </button>
-            <button className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg transition-colors">
+            <button className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg">
               💚 Wishlist
             </button>
-            <button className="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-lg transition-colors">
+            <button className="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-lg">
               🎟️ Coupons
             </button>
           </div>
