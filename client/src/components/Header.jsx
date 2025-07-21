@@ -3,6 +3,8 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { getMe } from '../utils/auth';
 import axios from 'axios';
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
 export default function Header() {
   const [user, setUser] = useState(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -31,7 +33,7 @@ export default function Header() {
       const token = localStorage.getItem('token');
       if (!token) return;
 
-      const res = await axios.get('http://localhost:5000/api/cart', {
+      const res = await axios.get(`${API_BASE_URL}/cart`, {
         headers: { Authorization: `Bearer ${token}` }
       });
 

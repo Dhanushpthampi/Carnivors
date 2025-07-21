@@ -1,5 +1,7 @@
 import { useState } from 'react';
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
 export default function CreateProductForm() {
   const [form, setForm] = useState({
     name: '',
@@ -45,7 +47,7 @@ export default function CreateProductForm() {
     formData.append('variants', JSON.stringify(form.variants));
 
     try {
-      const res = await fetch("http://localhost:5000/api/products", {
+      const res = await fetch(`${API_BASE_URL}/products`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,

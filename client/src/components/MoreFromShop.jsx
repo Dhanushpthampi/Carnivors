@@ -1,14 +1,17 @@
 import React, { useEffect, useState } from 'react';
 import ProductGrid from './ProductGrid';
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
 export default function MoreFromShop({ shopId, excludeId }) {
   const [products, setProducts] = useState([]);
 
   useEffect(() => {
     const fetchFromShop = async () => {
       try {
-        // Fixed: Added shopId parameter and fixed double slash
-        const res = await fetch(`http://localhost:5000/api/products/more-from-shop?shopId=${shopId}&excludeId=${excludeId}`);
+        const res = await fetch(
+          `${API_BASE_URL}/products/more-from-shop?shopId=${shopId}&excludeId=${excludeId}`
+        );
         const data = await res.json();
         setProducts(data);
       } catch (err) {

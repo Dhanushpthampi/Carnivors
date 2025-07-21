@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import ProductGrid from './ProductGrid';
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
 export default function SimilarProducts({ category, excludeId }) {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -14,31 +16,21 @@ export default function SimilarProducts({ category, excludeId }) {
       setError(null);
       
       try {
-        console.log('🔍 Fetching similar products for:', excludeId);
-        const url = `http://localhost:5000/api/products/similar?productId=${excludeId}`;
-        console.log('📡 URL:', url);
-        
+        const url = `${API_BASE_URL}/products/similar?productId=${excludeId}`;
         const res = await fetch(url);
-        console.log('📊 Response status:', res.status);
         
         if (!res.ok) {
           throw new Error(`HTTP error! status: ${res.status}`);
         }
         
         const contentType = res.headers.get('content-type');
-        console.log('📄 Content-Type:', contentType);
-        
         if (!contentType || !contentType.includes('application/json')) {
-          const text = await res.text();
-          console.error('❌ Expected JSON but got:', text.substring(0, 200));
           throw new Error('Server returned non-JSON response');
         }
         
         const data = await res.json();
-        console.log('✅ Similar products fetched:', data.length);
         setProducts(data);
       } catch (err) {
-        console.error('❌ Failed to fetch similar products:', err);
         setError(err.message);
       } finally {
         setLoading(false);
