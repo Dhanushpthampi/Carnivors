@@ -318,6 +318,17 @@ const connectDB = async () => {
 // Start the application
 connectDB();
 
+
+const path = require("path");
+
+// Serve static files from the React app
+app.use(express.static(path.join(__dirname, "../client/dist")));
+
+// Serve index.html for all unknown routes (SPA fallback)
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "../client/dist/index.html"));
+});
+
 // Handle unhandled promise rejections
 process.on('unhandledRejection', (err) => {
   console.error('💥 Unhandled Promise Rejection:', err);
