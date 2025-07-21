@@ -3,6 +3,9 @@ import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 
+// Get API base URL from environment variables
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+
 export default function CartPage() {
   const [cartItems, setCartItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -20,7 +23,7 @@ export default function CartPage() {
         return;
       }
 
-      const res = await axios.get('http://localhost:5000/api/cart', {
+      const res = await axios.get(`${API_BASE_URL}/cart`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
@@ -48,7 +51,7 @@ export default function CartPage() {
 
     try {
       const token = localStorage.getItem('token');
-      const res = await axios.put('http://localhost:5000/api/cart/update', {
+      const res = await axios.put(`${API_BASE_URL}/cart/update`, {
         productId,
         variant,
         quantity: newQuantity
@@ -74,7 +77,7 @@ export default function CartPage() {
 
     try {
       const token = localStorage.getItem('token');
-      const res = await axios.delete('http://localhost:5000/api/cart/remove', {
+      const res = await axios.delete(`${API_BASE_URL}/cart/remove`, {
         headers: { Authorization: `Bearer ${token}` },
         data: { productId, variant }
       });
@@ -96,7 +99,7 @@ export default function CartPage() {
 
     try {
       const token = localStorage.getItem('token');
-      const res = await axios.delete('http://localhost:5000/api/cart/clear', {
+      const res = await axios.delete(`${API_BASE_URL}/cart/clear`, {
         headers: { Authorization: `Bearer ${token}` }
       });
 

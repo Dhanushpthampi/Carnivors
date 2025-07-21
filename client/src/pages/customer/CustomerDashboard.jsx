@@ -16,11 +16,14 @@ export default function CustomerDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // Get the API base URL from environment variables
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
   useEffect(() => {
     const fetchProducts = async () => {
       try {
         setLoading(true);
-        const res = await fetch('http://localhost:5000/api/products');
+        const res = await fetch(`${API_BASE_URL}/products`);
         if (!res.ok) throw new Error('Failed to fetch products');
         const data = await res.json();
         
@@ -44,7 +47,7 @@ export default function CustomerDashboard() {
     };
 
     fetchProducts();
-  }, []);
+  }, [API_BASE_URL]);
 
   // Ensure products is always an array before filtering
   const filtered = Array.isArray(products) ? products.filter((p) =>

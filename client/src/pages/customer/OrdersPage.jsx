@@ -9,6 +9,9 @@ export default function OrdersPage() {
   const [activeTab, setActiveTab] = useState('all');
   const [stats, setStats] = useState(null);
 
+  // Get the API base URL from environment variables
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
   const fetchOrders = async (status = null) => {
     try {
       setLoading(true);
@@ -19,7 +22,7 @@ export default function OrdersPage() {
         return;
       }
 
-      let url = 'http://localhost:5000/api/orders';
+      let url = `${API_BASE_URL}/orders`;
       if (status && status !== 'all') {
         url += `?status=${status}`;
       }
@@ -42,7 +45,7 @@ export default function OrdersPage() {
   const fetchStats = async () => {
     try {
       const token = localStorage.getItem('token');
-      const res = await axios.get('http://localhost:5000/api/orders/stats', {
+      const res = await axios.get(`${API_BASE_URL}/orders/stats`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
@@ -60,7 +63,7 @@ export default function OrdersPage() {
     try {
       const token = localStorage.getItem('token');
       const res = await axios.put(
-        `http://localhost:5000/api/orders/${orderId}/cancel`,
+        `${API_BASE_URL}/orders/${orderId}/cancel`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -78,7 +81,7 @@ export default function OrdersPage() {
   useEffect(() => {
     fetchOrders(activeTab === 'all' ? null : activeTab);
     fetchStats();
-  }, [activeTab]);
+  }, [activeTab, API_BASE_URL]);
 
   const getStatusColor = (status) => {
     const colors = {
