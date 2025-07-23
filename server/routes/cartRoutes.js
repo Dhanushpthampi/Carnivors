@@ -6,7 +6,7 @@ const cartController = require('../controllers/cartController');
 // Add item to cart
 router.post('/add', authMiddleware, cartController.addToCart);
 
-// Get user's cart - Fixed route path
+// Get user's cart
 router.get('/', authMiddleware, cartController.getCart);
 
 // Update cart item quantity
@@ -17,5 +17,8 @@ router.delete('/remove', authMiddleware, cartController.removeFromCart);
 
 // Clear entire cart
 router.delete('/clear', authMiddleware, cartController.clearCart);
+
+// Checkout cart
+router.post('/checkout', authMiddleware, cartController.checkoutCart);
 
 module.exports = router;

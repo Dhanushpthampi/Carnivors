@@ -11,7 +11,8 @@ import ShopProfile from "./pages/profile/ShopProfile";
 import DeliveryProfile from "./pages/profile/DeliveryProfile";
 import Layout from "./components/Layout";
 import CartPage from "./pages/customer/CartPage"; // Add this import
-
+import OrdersPage from "./pages/customer/OrdersPage"; // Import OrdersPage if needed
+import ShopOrderDashboard from "./pages/shop/ShopOrderDashboard";
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -46,6 +47,8 @@ function App() {
             {/* Other protected pages */}
             <Route path="/product/:id" element={<ProductDetailPage />} />
             <Route path="/cart" element={<CartPage />} /> {/* Add this route */}
+            <Route path="/orders" element={<OrdersPage />} /> {/* Add this route if needed */}
+            <Route path="/shop-orders" element={<ShopOrderDashboard />} />
           </Route>
         </Route>
       </Routes>

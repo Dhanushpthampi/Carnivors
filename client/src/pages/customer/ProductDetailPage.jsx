@@ -1,4 +1,4 @@
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useEffect, useState, useRef } from 'react';
 import axios from 'axios';
 import { toast } from 'react-toastify';
@@ -7,11 +7,13 @@ import MoreFromShop from '../../components/MoreFromShop';
 
 export default function ProductDetailPage() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [product, setProduct] = useState(null);
   const [selectedVariant, setSelectedVariant] = useState(null);
   const [error, setError] = useState('');
   const [cartItems, setCartItems] = useState([]);
   const [showCart, setShowCart] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [zoomStyle, setZoomStyle] = useState({
     backgroundImage: '',
     backgroundPosition: 'center',
@@ -61,29 +63,35 @@ export default function ProductDetailPage() {
   };
 
   const handleAddToCart = async () => {
+    if (loading) return;
+    
     try {
+      setLoading(true);
       const token = localStorage.getItem('token');
       
       if (!token) {
         toast.error('Please login to add items to cart');
+        navigate('/login');
         return;
       }
 
-      const res = await fetch(`${API_BASE_URL}/cart/add`, {
-        method: 'POST',
+      if (!selectedVariant) {
+        toast.error('Please select a variant');
+        return;
+      }
+
+      const res = await axios.post(`${API_BASE_URL}/cart/add`, {
+        productId: product._id,
+        quantity: 1,
+        variant: selectedVariant.weight
+      }, {
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          productId: product._id,
-          quantity: 1,
-          variant: selectedVariant?.weight || selectedVariant?.label,
-        }),
+          'Authorization': `Bearer ${token}`
+        }
       });
 
-      const data = await res.json();
-      if (res.ok) {
+      if (res.data.success) {
         toast.success('🛒 Added to cart!');
         // Fetch updated cart and show it
         await fetchCart();
@@ -94,20 +102,36 @@ export default function ProductDetailPage() {
           setShowCart(false);
         }, 3000);
       } else {
-        toast.error(data.message || 'Error adding to cart');
+        toast.error(res.data.message || 'Error adding to cart');
       }
     } catch (err) {
       console.error('❌ Error adding to cart:', err);
-      toast.error('Network error');
+      if (err.response?.status === 401) {
+        toast.error('Please login to add items to cart');
+        navigate('/login');
+      } else {
+        toast.error(err.response?.data?.message || 'Network error');
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleBuyNow = async () => {
+    if (loading) return;
+    
     try {
+      setLoading(true);
       const token = localStorage.getItem('token');
       
       if (!token) {
         toast.error('Please login to place an order');
+        navigate('/login');
+        return;
+      }
+
+      if (!selectedVariant) {
+        toast.error('Please select a variant');
         return;
       }
 
@@ -119,21 +143,23 @@ export default function ProductDetailPage() {
       const user = userRes.data;
       if (!user.address) {
         toast.error('Please update your address in profile before placing an order');
+        navigate('/profile');
         return;
       }
 
-      // Create order
+      // Create order directly
       const orderData = {
         items: [{
           productId: product._id,
           variant: {
-            weight: selectedVariant?.weight,
-            price: selectedVariant?.price
+            weight: selectedVariant.weight,
+            price: selectedVariant.price
           },
           quantity: 1
         }],
         address: user.address,
-        totalAmount: selectedVariant?.price || 0
+        totalAmount: selectedVariant.price,
+        orderType: 'direct' // Buy Now type
       };
 
       const res = await axios.post(`${API_BASE_URL}/orders`, orderData, {
@@ -145,12 +171,19 @@ export default function ProductDetailPage() {
 
       if (res.status === 201) {
         toast.success('🎉 Order placed successfully!');
-        // You can redirect to orders page or show order details
-        console.log('Order created:', res.data);
+        // Navigate to orders page or order details
+        navigate('/orders');
       }
     } catch (err) {
       console.error('❌ Error placing order:', err);
-      toast.error(err.response?.data?.message || 'Error placing order');
+      if (err.response?.status === 401) {
+        toast.error('Please login to place an order');
+        navigate('/login');
+      } else {
+        toast.error(err.response?.data?.message || 'Error placing order');
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -194,6 +227,15 @@ export default function ProductDetailPage() {
             <p className="text-sm text-gray-600">
               Total items: {cartItems.length}
             </p>
+            <button
+              onClick={() => {
+                setShowCart(false);
+                navigate('/cart');
+              }}
+              className="w-full mt-2 bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg text-sm font-medium transition"
+            >
+              View Cart
+            </button>
           </div>
         </div>
       )}
@@ -283,23 +325,34 @@ export default function ProductDetailPage() {
           <div className="flex flex-col sm:flex-row gap-4 mt-6">
             <button
               onClick={handleAddToCart}
-              disabled={!selectedVariant}
+              disabled={!selectedVariant || loading}
               className="bg-gradient-to-r from-green-500 to-green-600 text-white px-8 py-3 text-lg rounded-xl hover:from-green-600 hover:to-green-700 transition font-semibold shadow disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              🛒 Add to Cart
+              {loading ? '🔄 Adding...' : '🛒 Add to Cart'}
             </button>
             <button
               onClick={handleBuyNow}
-              disabled={!selectedVariant}
+              disabled={!selectedVariant || loading}
               className="bg-gradient-to-r from-red-500 to-red-600 text-white px-8 py-3 text-lg rounded-xl hover:from-red-600 hover:to-red-700 transition font-semibold shadow disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              ⚡ Buy Now
+              {loading ? '🔄 Processing...' : '⚡ Buy Now'}
             </button>
+          </div>
+
+          {/* Additional Info */}
+          <div className="bg-gray-50 p-4 rounded-lg">
+            <h4 className="font-semibold mb-2">Product Information</h4>
+            <ul className="text-sm text-gray-600 space-y-1">
+              <li>• Category: {product.category}</li>
+              <li>• Available variants: {product.variants?.length || 0}</li>
+              <li>• Fresh and high quality</li>
+              <li>• Cash on delivery available</li>
+            </ul>
           </div>
         </div>
       </div>
 
-      {/* Related */}
+      {/* Related Products */}
       <SimilarProducts category={product.category} excludeId={id} />
       <MoreFromShop shopId={product.shopId?._id} excludeId={id} shopName={product.shopId?.name} />
     </div>

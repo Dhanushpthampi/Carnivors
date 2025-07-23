@@ -76,7 +76,7 @@ app.get('/api/health', (req, res) => {
 });
 
 // Load routes with enhanced error handling
-let authRoutes, productRoutes, userRoutes, cartRoutes;
+let authRoutes, productRoutes, userRoutes, cartRoutes, orderRoutes;
 
 try {
   authRoutes = require('./routes/authRoutes');
@@ -109,6 +109,16 @@ try {
   console.error('❌ Failed to load cartRoutes:', error.message);
   process.exit(1);
 }
+
+// Load order routes
+try {
+  orderRoutes = require('./routes/orderRoutes');
+  console.log('✅ orderRoutes loaded successfully');
+} catch (error) {
+  console.error('❌ Failed to load orderRoutes:', error.message);
+  process.exit(1);
+}
+
 const createIndexes = async () => {
   try {
     console.log('🔧 Creating database indexes...');
@@ -129,15 +139,6 @@ const createIndexes = async () => {
     console.error('❌ Error creating indexes:', error);
   }
 };
-
-// Call this after MongoDB connection in your connectDB function
-// Add this line after the successful connection:
-// await createIndexes();
-
-
-
-
-
 
 // Rate limiting for API endpoints
 const rateLimit = require('express-rate-limit');
@@ -177,6 +178,12 @@ app.use('/api/cart', (req, res, next) => {
   next();
 }, cartRoutes);
 
+// Add order routes
+app.use('/api/orders', (req, res, next) => {
+  console.log('📦 Orders route hit:', req.method, req.url);
+  next();
+}, orderRoutes);
+
 // Catch-all route for undefined API endpoints
 app.use('/api/*', (req, res) => {
   console.log('❌ Unmatched API route:', req.method, req.originalUrl);
@@ -204,7 +211,13 @@ app.use('/api/*', (req, res) => {
       'PUT /api/cart/update',
       'DELETE /api/cart/remove',
       'DELETE /api/cart/clear',
-      'GET /api/cart/get', 
+      'POST /api/cart/checkout',
+      'POST /api/orders',
+      'GET /api/orders',
+      'GET /api/orders/:orderId',
+      'PUT /api/orders/:orderId/status',
+      'PUT /api/orders/:orderId/cancel',
+      'GET /api/orders/stats'
     ]
   });
 });
@@ -294,6 +307,9 @@ const connectDB = async () => {
     console.log('✅ MongoDB connected successfully');
     console.log(`📍 Connected to: ${conn.connection.host}`);
     
+    // Create indexes after connection
+    await createIndexes();
+    
     // Start server after successful DB connection
     const PORT = process.env.PORT || 5000;
     const server = app.listen(PORT, '0.0.0.0', () => {
@@ -317,7 +333,6 @@ const connectDB = async () => {
 
 // Start the application
 connectDB();
-
 
 const path = require("path");
 

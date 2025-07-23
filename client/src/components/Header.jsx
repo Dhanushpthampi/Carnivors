@@ -84,6 +84,7 @@ export default function Header() {
         <nav className="space-x-6 hidden sm:flex items-center text-sm font-medium">
           <NavLink to="/" label="Home" currentPath={location.pathname} />
           <NavLink to="/orders" label="Orders" currentPath={location.pathname} />
+          <NavLink to="/shop-orders" label="shop-orders" currentPath={location.pathname} />
           {user && (
             <NavLink to={`/profile/${user.role}`} label="Profile" currentPath={location.pathname} />
           )}
