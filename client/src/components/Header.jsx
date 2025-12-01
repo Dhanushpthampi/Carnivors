@@ -80,14 +80,8 @@ export default function Header() {
           CARNIVORS<span role="img" aria-label="meat">🥩</span>
         </Link>
 
-        {/* Navigation */}
+        {/* Navigation - Empty as requested */}
         <nav className="space-x-6 hidden sm:flex items-center text-sm font-medium">
-          <NavLink to="/" label="Home" currentPath={location.pathname} />
-          <NavLink to="/orders" label="Orders" currentPath={location.pathname} />
-          <NavLink to="/shop-orders" label="shop-orders" currentPath={location.pathname} />
-          {user && (
-            <NavLink to={`/profile/${user.role}`} label="Profile" currentPath={location.pathname} />
-          )}
         </nav>
 
         {/* Right side: Cart + Profile/Login */}
@@ -148,16 +142,36 @@ export default function Header() {
                   </div>
 
                   <div className="py-2">
-                    <button
-                      onClick={() => {
-                        localStorage.clear();
-                        navigate('/login');
-                      }}
+                    <Link
+                      to={`/profile/${user.role}`}
                       className="w-full px-6 py-3 text-left text-sm text-gray-700 hover:bg-gray-50 transition flex items-center space-x-3"
+                      onClick={() => setDropdownOpen(false)}
                     >
-                      <span className="text-lg">🔁</span>
-                      <span className="font-medium">Switch Account</span>
-                    </button>
+                      <span className="text-lg">👤</span>
+                      <span className="font-medium">Profile</span>
+                    </Link>
+
+                    {user.role === 'customer' && (
+                      <Link
+                        to="/orders"
+                        className="w-full px-6 py-3 text-left text-sm text-gray-700 hover:bg-gray-50 transition flex items-center space-x-3"
+                        onClick={() => setDropdownOpen(false)}
+                      >
+                        <span className="text-lg">📦</span>
+                        <span className="font-medium">Orders</span>
+                      </Link>
+                    )}
+
+                    {user.role === 'shop' && (
+                      <Link
+                        to="/shop-orders"
+                        className="w-full px-6 py-3 text-left text-sm text-gray-700 hover:bg-gray-50 transition flex items-center space-x-3"
+                        onClick={() => setDropdownOpen(false)}
+                      >
+                        <span className="text-lg">🏪</span>
+                        <span className="font-medium">Shop Orders</span>
+                      </Link>
+                    )}
 
                     <div className="mx-4 border-t border-gray-100"></div>
 

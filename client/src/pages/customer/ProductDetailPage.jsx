@@ -68,6 +68,12 @@ export default function ProductDetailPage() {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
+      const role = localStorage.getItem('role');
+      
+      if (role === 'shop') {
+        toast.error('Please login as a customer to add items to cart');
+        return;
+      }
       
       if (!token) {
         toast.error('Please login to add items to cart');
@@ -123,6 +129,12 @@ export default function ProductDetailPage() {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
+      const role = localStorage.getItem('role');
+
+      if (role === 'shop') {
+        toast.error('Please login as a customer to place an order');
+        return;
+      }
       
       if (!token) {
         toast.error('Please login to place an order');
