@@ -16,13 +16,14 @@ import ShopOrderDashboard from "./pages/shop/ShopOrderDashboard";
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import ScrollToTop from "./components/ScrollToTop";
-
+import { CartProvider } from "./context/CartContext";
 const token = localStorage.getItem("token");
 const role = localStorage.getItem("role");
 
 function App() {
   return (
     <>
+     <CartProvider>
       <ScrollToTop />
       <Routes>
         <Route path="/login" element={<Login />} />
@@ -54,6 +55,7 @@ function App() {
         </Route>
       </Routes>
       <ToastContainer />
+      </CartProvider>
     </>
   );
 }

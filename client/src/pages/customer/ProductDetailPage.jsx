@@ -4,7 +4,8 @@ import axios from 'axios';
 import { toast } from 'react-toastify';
 import SimilarProducts from '../../components/SimilarProducts';
 import MoreFromShop from '../../components/MoreFromShop';
-
+import useRazorpayCheckout from "../../hooks/useRazorpayCheckout"
+import { useCart } from "../../context/CartContext";
 export default function ProductDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -20,6 +21,9 @@ export default function ProductDetailPage() {
     display: 'none',
   });
   const zoomRef = useRef(null);
+  const { startCheckout } = useRazorpayCheckout()
+  const { updateCartCount } = useCart();
+
   
   // Get the API base URL from environment variables
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -98,7 +102,8 @@ export default function ProductDetailPage() {
       });
 
       if (res.data.success) {
-        toast.success('🛒 Added to cart!');
+      //  toast.success('🛒 Added to cart!');
+        updateCartCount(prev => prev + 1);
         // Fetch updated cart and show it
         await fetchCart();
         setShowCart(true);
@@ -114,7 +119,7 @@ export default function ProductDetailPage() {
       console.error('❌ Error adding to cart:', err);
       if (err.response?.status === 401) {
         toast.error('Please login to add items to cart');
-        navigate('/login');
+ 
       } else {
         toast.error(err.response?.data?.message || 'Network error');
       }
@@ -123,81 +128,64 @@ export default function ProductDetailPage() {
     }
   };
 
-  const handleBuyNow = async () => {
-    if (loading) return;
-    
-    try {
-      setLoading(true);
-      const token = localStorage.getItem('token');
-      const role = localStorage.getItem('role');
 
-      if (role === 'shop') {
-        toast.error('Please login as a customer to place an order');
-        return;
-      }
-      
-      if (!token) {
-        toast.error('Please login to place an order');
-        navigate('/login');
-        return;
-      }
+const handleBuyNow = async () => {
 
-      if (!selectedVariant) {
-        toast.error('Please select a variant');
-        return;
-      }
+  if (!selectedVariant) {
+    toast.error("Please select a variant");
+    return;
+  }
 
-      // Get user profile to check address
-      const userRes = await axios.get(`${API_BASE_URL}/user/profile`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+  const token = localStorage.getItem("token");
+  const role = localStorage.getItem("role");
 
-      const user = userRes.data;
-      if (!user.address) {
-        toast.error('Please update your address in profile before placing an order');
-        navigate('/profile');
-        return;
-      }
+  if (!token) {
+    toast.error("Login required");
+    navigate("/login");
+    return;
+  }
 
-      // Create order directly
-      const orderData = {
-        items: [{
-          productId: product._id,
-          variant: {
-            weight: selectedVariant.weight,
-            price: selectedVariant.price
-          },
-          quantity: 1
-        }],
-        address: user.address,
-        totalAmount: selectedVariant.price,
-        orderType: 'direct' // Buy Now type
-      };
+  if (role !== "customer") {
+    toast.error("Please login using a customer account");
+    navigate("/login");
+    return;
+  }
 
-      const res = await axios.post(`${API_BASE_URL}/orders`, orderData, {
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}` 
+  const userRes = await axios.get(`${API_BASE_URL}/user/profile`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+
+  const address = userRes.data.address;
+
+  if (!address) {
+    toast.error("Please add address in profile");
+    navigate("/profile/customer");
+    return;
+  }
+
+  // ✅ START CHECKOUT
+  const success = await startCheckout({
+    items: [
+      {
+        productId: product._id,
+        quantity: 1,
+        variant: {
+          weight: selectedVariant.weight
         }
-      });
+      }
+    ],
+    totalAmount: selectedVariant.price,
+    orderType: "direct",
+    address
+  });
 
-      if (res.status === 201) {
-        toast.success('🎉 Order placed successfully!');
-        // Navigate to orders page or order details
-        navigate('/orders');
-      }
-    } catch (err) {
-      console.error('❌ Error placing order:', err);
-      if (err.response?.status === 401) {
-        toast.error('Please login to place an order');
-        navigate('/login');
-      } else {
-        toast.error(err.response?.data?.message || 'Error placing order');
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
+  // ✅ NAVIGATE AFTER SUCCESS
+  if (success) {
+    navigate("/orders");
+  }
+};
+
+
 
   if (error) return <div className="p-4 text-red-600 text-center">Error: {error}</div>;
   if (!product) return <div className="p-6 text-center text-gray-600">Loading product...</div>;

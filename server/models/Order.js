@@ -11,28 +11,37 @@ const orderSchema = new mongoose.Schema({
     ref: 'User', 
     required: true 
   },
-  items: [
-    {
-      productId: { 
-        type: mongoose.Schema.Types.ObjectId, 
-        ref: 'Product', 
-        required: true 
-      },
-      variant: {
-        weight: { type: String, required: true },
-        price: { type: Number, required: true }
-      },
-      quantity: { 
-        type: Number, 
-        default: 1,
-        min: 1
-      },
-      itemTotal: {
-        type: Number,
-        required: true
-      }
+items: [
+  {
+    productId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Product',
+      required: true
+    },
+
+    shopId: {    // ✅ ADD THIS
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: true
+    },
+
+    variant: {
+      weight: { type: String, required: true },
+      price: { type: Number, required: true }
+    },
+
+    quantity: {
+      type: Number,
+      default: 1,
+      min: 1
+    },
+
+    itemTotal: {
+      type: Number,
+      required: true
     }
-  ],
+  }
+],
   address: { 
     type: String, 
     required: true 

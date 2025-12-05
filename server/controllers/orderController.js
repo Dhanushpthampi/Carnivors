@@ -1,7 +1,7 @@
 const Order = require('../models/Order');
 const Cart = require('../models/Cart');
 const Product = require('../models/Product');
-
+const mongoose = require("mongoose");
 // Create new order (Buy Now or Checkout)
 const createOrder = async (req, res) => {
   try {
@@ -48,28 +48,39 @@ const createOrder = async (req, res) => {
       const itemTotal = variant.price * item.quantity;
       calculatedTotal += itemTotal;
 
-      validatedItems.push({
-        productId: item.productId,
-        variant: {
-          weight: variant.weight,
-          price: variant.price
-        },
-        quantity: item.quantity,
-        itemTotal: itemTotal
-      });
+ validatedItems.push({
+  productId: product._id,
+
+  shopId: product.shopId,   // ✅ COPY shopId FROM PRODUCT
+
+  variant: {
+    weight: variant.weight,
+    price: variant.price
+  },
+
+  quantity: item.quantity,
+  itemTotal
+});
     }
 
     // Create the order
-    const order = new Order({
-      customerId: userId,
-      items: validatedItems,
-      address,
-      status: 'Placed',
-      totalAmount: calculatedTotal,
-      orderType,
-      paymentStatus: 'Pending',
-      orderNumber: generateOrderNumber()
-    });
+const order = new Order({
+  customerId: userId,
+  items: validatedItems,
+  address,
+  status: "Placed",
+  totalAmount: calculatedTotal,
+  orderType,
+  paymentStatus: "Paid",             // ✅ mark paid here
+  paymentMethod: "Online",
+
+  razorpayOrderId: req.body.razorpayOrderId,   // ✅ attach Razorpay order id
+  razorpayPaymentId: req.body.razorpayPaymentId, // ✅ payment id
+
+  orderNumber: generateOrderNumber()
+});
+
+
 
     await order.save();
 
@@ -288,51 +299,83 @@ const cancelOrder = async (req, res) => {
 };
 
 // Get order statistics
+
+
 const getOrderStats = async (req, res) => {
   try {
-    const userId = req.user.id;
+    // ✅ Convert string id to ObjectId for aggregation
+    const userId = new mongoose.Types.ObjectId(req.user.id);
 
+    // 🔍 DEBUG: Check stored orders
+    const allOrders = await Order.find({ customerId: userId });
+
+    console.log("==== ALL USER ORDERS ====");
+    allOrders.forEach(o => {
+      console.log({
+        id: o._id,
+        status: o.status,
+        paymentStatus: o.paymentStatus,
+        totalAmount: o.totalAmount
+      });
+    });
+    console.log("==========================");
+
+    // ✅ Count all user orders
+    const totalOrders = await Order.countDocuments({
+      customerId: userId
+    });
+
+    // ✅ Breakdown by order status
     const stats = await Order.aggregate([
       { $match: { customerId: userId } },
       {
         $group: {
-          _id: '$status',
+          _id: "$status",
           count: { $sum: 1 },
-          totalAmount: { $sum: '$totalAmount' }
+          totalAmount: { $sum: "$totalAmount" }
         }
       }
     ]);
 
-    const totalOrders = await Order.countDocuments({ customerId: userId });
-    const totalSpent = await Order.aggregate([
-      { $match: { customerId: userId, status: { $ne: 'Cancelled' } } },
-      { $group: { _id: null, total: { $sum: '$totalAmount' } } }
+    // ✅ Revenue ONLY from PAID orders
+    const totalSpentAgg = await Order.aggregate([
+      {
+        $match: {
+          customerId: userId,
+          paymentStatus: "Paid"
+        }
+      },
+      {
+        $group: {
+          _id: null,
+          total: { $sum: "$totalAmount" }
+        }
+      }
     ]);
+
+    const totalSpent = totalSpentAgg[0]?.total || 0;
 
     res.json({
       success: true,
       stats: {
         totalOrders,
-        totalSpent: totalSpent[0]?.total || 0,
-        statusBreakdown: stats.reduce((acc, stat) => {
-          acc[stat._id] = {
-            count: stat.count,
-            totalAmount: stat.totalAmount
+        totalSpent,
+        statusBreakdown: stats.reduce((acc, s) => {
+          acc[s._id] = {
+            count: s.count,
+            totalAmount: s.totalAmount
           };
           return acc;
         }, {})
       }
     });
 
-  } catch (error) {
-    console.error('Get order stats error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error fetching order statistics',
-      error: error.message
-    });
+  } catch (err) {
+    console.error("❌ getOrderStats error:", err);
+    res.status(500).json({ success: false });
   }
 };
+
 
 // Helper function to generate order number
 const generateOrderNumber = () => {

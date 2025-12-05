@@ -6,7 +6,7 @@ export default function Layout() {
   return (
     <>
       <Header />
-      <main className="min-h-[80vh] ">
+      <main className="min-h-screen">
         <Outlet />  {/* Content will be injected here */}
       </main>
       <Footer />

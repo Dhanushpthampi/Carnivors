@@ -3,13 +3,13 @@ const router = express.Router();
 const { authMiddleware } = require('../middleware/auth');
 const shopOrderController = require('../controllers/shopOrderController');
 
-// Middleware to check if user is shop owner
+// ✅ Correct role check
 const isShopOwner = (req, res, next) => {
-  if (req.user.role !== 'shopOwner') {
+  if (req.user.role !== 'shop') {
     return res.status(403).json({
       success: false,
-      message: 'Access denied. Shop owner privileges required.'
-    });
+      message: 'Access denied. Shop privileges required.'
+    });     
   }
   next();
 };

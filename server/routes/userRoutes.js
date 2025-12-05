@@ -250,4 +250,30 @@ router.get('/stats', authMiddleware, async (req, res) => {
   }
 });
 
+
+router.put('/update-shop', authMiddleware, async (req, res) => {
+  try {
+    const { shopDetails } = req.body;
+
+    const user = await User.findById(req.user.id);
+
+    if (!user || user.role !== "shop") {
+      return res.status(403).json({ error: "Not authorized" });
+    }
+
+    user.shopDetails = {
+      ...user.shopDetails,
+      ...shopDetails
+    };
+
+    await user.save();
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error("Shop update failed", err);
+    res.status(500).json({ error: "Update failed" });
+  }
+});
+
+
 module.exports = router;

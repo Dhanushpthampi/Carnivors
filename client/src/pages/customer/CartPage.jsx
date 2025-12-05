@@ -2,16 +2,17 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { toast } from 'react-toastify';
-
+import useRazorpayCheckout from "../../hooks/useRazorpayCheckout"
 // Get API base URL from environment variables
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
-
+import { useCart } from "../../context/CartContext";
 export default function CartPage() {
   const [cartItems, setCartItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState({});
   const navigate = useNavigate();
-
+const { startCheckout } = useRazorpayCheckout()
+const { updateCartCount } = useCart()
   const fetchCart = async () => {
     try {
       setLoading(true);
@@ -146,6 +147,31 @@ export default function CartPage() {
       </div>
     );
   }
+
+
+const handleCheckout = async () => {
+
+  const success = await startCheckout({
+    items: cartItems.map(item => ({
+      productId: item.product._id,
+      quantity: item.quantity,
+      variant: {
+        weight: item.variant
+      }
+    })),
+    totalAmount: getTotalPrice(),
+    orderType: "checkout",
+    address: "Demo Address"
+  });
+
+  // ✅ Redirect after success
+  if (success) {
+    navigate("/orders");
+  }
+};
+
+
+
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
@@ -293,14 +319,11 @@ export default function CartPage() {
               </Link>
               
               <button
-                onClick={() => {
-                  // Handle checkout logic here
-                  toast.info('Checkout functionality coming soon!');
-                }}
-                className="flex-1 bg-green-600 hover:bg-green-700 text-white py-3 px-6 rounded-xl font-semibold transition shadow-md"
-              >
-                Proceed to Checkout
-              </button>
+  onClick={handleCheckout}
+  className="flex-1 bg-green-600 hover:bg-green-700 text-white py-3 px-6 rounded-xl font-semibold transition shadow-md"
+>
+  Proceed to Checkout
+</button>
             </div>
           </div>
         </>

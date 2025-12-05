@@ -2,14 +2,14 @@ import { useEffect, useState, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { getMe } from '../utils/auth';
 import axios from 'axios';
-
+import { useCart } from "../context/CartContext";
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 export default function Header() {
   const [user, setUser] = useState(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [cartItems, setCartItems] = useState([]);
-  const [cartCount, setCartCount] = useState(0);
+const { cartCount, updateCartCount } = useCart();
+
   const navigate = useNavigate();
   const location = useLocation();
   const dropdownRef = useRef();
@@ -37,10 +37,18 @@ export default function Header() {
         headers: { Authorization: `Bearer ${token}` }
       });
 
-      if (res.data.success) {
-        setCartItems(res.data.items || []);
-        setCartCount(res.data.totalItems || 0);
-      }
+if (res.data.success) {
+  const items = res.data.items || [];
+
+  const count =
+    res.data.totalItems !== undefined
+      ? res.data.totalItems
+      : items.reduce((sum, i) => sum + (i.quantity || 1), 0);
+
+  updateCartCount(count);
+}
+
+
     } catch (err) {
       console.error("Error fetching cart:", err);
     }
@@ -64,13 +72,13 @@ export default function Header() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const handleLogout = () => {
-    localStorage.clear();
-    setUser(null);
-    setCartItems([]);
-    setCartCount(0);
-    navigate('/login');
-  };
+const handleLogout = () => {
+  localStorage.clear();
+  setUser(null);
+  updateCartCount(0);   // ✅ Reset cart via context
+  navigate("/login", { replace: true });
+};
+
 
   return (
     <header className="bg-white/90 backdrop-blur sticky top-0 z-50 shadow-sm">
@@ -87,16 +95,19 @@ export default function Header() {
         {/* Right side: Cart + Profile/Login */}
         <div className="flex items-center gap-4">
           {/* Cart Icon (only show if user is logged in) */}
-          {user && (
-            <Link to="/cart" className="relative group p-1.5 rounded-full hover:bg-gray-100 transition">
-              <CartIcon className="w-6 h-6 text-gray-700 group-hover:text-blue-600" />
-              {cartCount > 0 && (
-                <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[10px] leading-4 min-w-[1.15rem] px-1 rounded-full text-center font-bold shadow-lg animate-pulse">
-                  {cartCount > 99 ? '99+' : cartCount}
-                </span>
-              )}
-            </Link>
-          )}
+{/* Cart Icon (only for CUSTOMER accounts) */}
+{user?.role === "customer" && (
+  <Link to="/cart" className="relative group p-1.5 rounded-full hover:bg-gray-100 transition">
+    <CartIcon className="w-6 h-6 text-gray-700 group-hover:text-blue-600" />
+
+    {cartCount > 0 && (
+      <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[10px] leading-4 min-w-[1.15rem] px-1 rounded-full text-center font-bold shadow-lg animate-pulse">
+        {cartCount > 99 ? '99+' : cartCount}
+      </span>
+    )}
+  </Link>
+)}
+
 
           {/* Login / Profile Dropdown */}
           {!user ? (
@@ -142,7 +153,10 @@ export default function Header() {
                   </div>
 
                   <div className="py-2">
-                    <Link
+
+
+                     {user.role === 'customer' && (
+                     <Link
                       to={`/profile/${user.role}`}
                       className="w-full px-6 py-3 text-left text-sm text-gray-700 hover:bg-gray-50 transition flex items-center space-x-3"
                       onClick={() => setDropdownOpen(false)}
@@ -150,6 +164,18 @@ export default function Header() {
                       <span className="text-lg">👤</span>
                       <span className="font-medium">Profile</span>
                     </Link>
+                    )}
+
+                    {user.role === 'shop' && (
+                      <Link
+                      to={`/profile/shop`}
+                      className="w-full px-6 py-3 text-left text-sm text-gray-700 hover:bg-gray-50 transition flex items-center space-x-3"
+                      onClick={() => setDropdownOpen(false)}
+                    >
+                      <span className="text-lg">👤</span>
+                      <span className="font-medium">Shop-Profile</span>
+                    </Link>
+                    )}
 
                     {user.role === 'customer' && (
                       <Link
